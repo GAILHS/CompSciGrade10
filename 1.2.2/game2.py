@@ -2,66 +2,152 @@ import turtle as trtl
 import random
 import os
 
-#-----game configuration variables-----
+# ----- leaderboard.py code -----
+
+bronze_score = 15
+silver_score = 20
+gold_score = 25
+
+def get_names(file_name):
+    if not os.path.exists(file_name):
+        open(file_name, "w").close()
+    with open(file_name, "r") as leaderboard_file:
+        names = []
+        for line in leaderboard_file:
+            leader_name = ""
+            index = 0
+            while index < len(line) and line[index] != ",":
+                leader_name += line[index]
+                index += 1
+            names.append(leader_name)
+    return names
+
+def get_scores(file_name):
+    if not os.path.exists(file_name):
+        open(file_name, "w").close()
+    with open(file_name, "r") as leaderboard_file:
+        scores = []
+        for line in leaderboard_file:
+            leader_score = ""
+            index = 0
+            while index < len(line) and line[index] != ",":
+                index += 1
+            index += 1
+            while index < len(line) and line[index] != "\n":
+                leader_score += line[index]
+                index += 1
+            try:
+                scores.append(int(leader_score))
+            except ValueError:
+                pass
+    return scores
+
+def update_leaderboard(file_name, leader_names, leader_scores, player_name, player_score):
+    index = 0
+    for i in range(len(leader_scores)):
+        if player_score >= leader_scores[i]:
+            index = i
+            break
+        else:
+            index = i + 1
+    leader_names.insert(index, player_name)
+    leader_scores.insert(index, player_score)
+    leader_names = leader_names[:5]
+    leader_scores = leader_scores[:5]
+    with open(file_name, "w") as leaderboard_file:
+        for i in range(len(leader_names)):
+            leaderboard_file.write(leader_names[i] + "," + str(leader_scores[i]) + "\n")
+    return leader_names, leader_scores
+
+def draw_leaderboard(high_scorer, leader_names, leader_scores, turtle_object, player_name, player_score):
+    font_setup = ("Arial", 20, "normal")
+    turtle_object.clear()
+    turtle_object.penup()
+    turtle_object.goto(-160, 100)
+    turtle_object.hideturtle()
+    turtle_object.pendown()
+
+    player_rank = None
+    for index in range(len(leader_names)):
+        entry = f"{index + 1}. {leader_names[index]:<10} {leader_scores[index]}"
+        turtle_object.write(entry, font=font_setup)
+        turtle_object.penup()
+        turtle_object.goto(-160, int(turtle_object.ycor()) - 50)
+        turtle_object.pendown()
+        if high_scorer and leader_names[index] == player_name and leader_scores[index] == player_score:
+            player_rank = index + 1  # ranks start at 1
+
+    turtle_object.penup()
+    turtle_object.goto(-160, int(turtle_object.ycor()) - 50)
+    turtle_object.pendown()
+
+    if high_scorer:
+        turtle_object.write("Congratulations!\nYou made the leaderboard!", font=font_setup)
+    else:
+        turtle_object.write("Sorry!\nYou didn't make the leaderboard.\nMaybe next time!", font=font_setup)
+
+    turtle_object.penup()
+    turtle_object.goto(-160, int(turtle_object.ycor()) - 50)
+    turtle_object.pendown()
+
+    if player_rank == 1:
+        turtle_object.write("You earned a gold medal!", font=font_setup)
+    elif player_rank == 2:
+        turtle_object.write("You earned a silver medal!", font=font_setup)
+    elif player_rank == 3:
+        turtle_object.write("You earned a bronze medal!", font=font_setup)
+
+# ----- End leaderboard.py code -----
+
+# Game config
 shape_size = 2
 shape_shape = "circle"
 
 background_color = "lightblue"
-colors = ["red", "orange", "yellow", "green", "blue", "purple", "magenta"]
-# Exclude the background color (if present)
-colors = [c for c in colors if c.lower() != background_color.lower()]
+colors = [c for c in ["red", "orange", "yellow", "green", "blue", "purple", "magenta"] if c.lower() != background_color.lower()]
 sizes = [0.5, 1, 1.5, 2, 2.5, 3]
 
-#-----countdown variables-----
 font_setup = ("Arial", 20, "normal")
-initial_timer = 3.0  # seconds for countdown (float for tenths)
-counter_interval = 100  # 100 ms = 0.1 second
-timer = initial_timer
-timer_up = False
+initial_timer = 3.0
+counter_interval = 100
 
-#-----screen setup-----
 wn = trtl.Screen()
 wn.title("Click the Shape Game")
 wn.bgcolor(background_color)
-wn.setup(width=1.0, height=1.0)  # fullscreen
-
-# Turn off automatic screen updates
+wn.setup(width=1.0, height=1.0)
 wn.tracer(0)
 
-#-----game variables-----
 score = 0
 timer_running = False
+timer = initial_timer
+timer_up = False
 
-#-----player name input-----
 player_name = wn.textinput("Player Name", "Please enter your name:")
+if not player_name:
+    player_name = "Player"
 
-#-----turtle setup-----
 player_turtle = trtl.Turtle()
 player_turtle.shape(shape_shape)
 player_turtle.penup()
 player_turtle.speed(0)
 player_turtle.shapesize(stretch_wid=shape_size, stretch_len=shape_size)
 
-#-----score display-----
 score_turtle = trtl.Turtle()
 score_turtle.hideturtle()
 score_turtle.penup()
-score_turtle.goto(0, wn.window_height()//2 - 60)
+score_turtle.goto(0, wn.window_height() // 2 - 60)
 
-#-----countdown writer-----
 counter = trtl.Turtle()
 counter.hideturtle()
 counter.penup()
-counter.goto(0, wn.window_height()//2 - 100)
+counter.goto(0, wn.window_height() // 2 - 150)  # Higher to avoid overlap
 
-#-----leaderboard writer-----
 leaderboard_turtle = trtl.Turtle()
 leaderboard_turtle.hideturtle()
 leaderboard_turtle.penup()
-leaderboard_turtle.goto(0, -30)
+leaderboard_turtle.goto(0, 0)
 
 LEADERBOARD_FILE = "leaderboard.txt"
-MAX_LEADERS = 5  # max top scores to keep
 
 def update_score():
     score_turtle.clear()
@@ -70,64 +156,10 @@ def update_score():
 
 def move_turtle_random():
     width = wn.window_width() // 2 - 40
-    height = wn.window_height() // 2 - 140  # leave space for timer and score
+    height = wn.window_height() // 2 - 140
     x = random.randint(-width, width)
     y = random.randint(-height, height)
     player_turtle.goto(x, y)
-    wn.update()
-
-def load_leaderboard():
-    leaderboard = []
-    if os.path.exists(LEADERBOARD_FILE):
-        with open(LEADERBOARD_FILE, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    parts = line.split(",")
-                    if len(parts) == 2:
-                        name, score_str = parts
-                        try:
-                            score_val = int(score_str)
-                            leaderboard.append((name, score_val))
-                        except ValueError:
-                            pass
-    # Sort leaderboard descending by score
-    leaderboard.sort(key=lambda x: x[1], reverse=True)
-    return leaderboard
-
-def save_leaderboard(leaderboard):
-    with open(LEADERBOARD_FILE, "w") as f:
-        for name, score_val in leaderboard[:MAX_LEADERS]:
-            f.write(f"{name},{score_val}\n")
-
-def update_leaderboard():
-    global score, player_name
-    leaderboard = load_leaderboard()
-    # Check if current score qualifies
-    if len(leaderboard) < MAX_LEADERS or score >= leaderboard[-1][1]:
-        # Insert score in correct position
-        inserted = False
-        for i, (_, s) in enumerate(leaderboard):
-            if score >= s:
-                leaderboard.insert(i, (player_name, score))
-                inserted = True
-                break
-        if not inserted:
-            leaderboard.append((player_name, score))
-        # Keep only top MAX_LEADERS
-        leaderboard = leaderboard[:MAX_LEADERS]
-        save_leaderboard(leaderboard)
-    return leaderboard
-
-def display_leaderboard(leaderboard):
-    leaderboard_turtle.clear()
-    leaderboard_turtle.goto(0, -80)  # lowered to avoid overlap with game over text
-    leaderboard_turtle.write("Leaderboard:", align="center", font=("Arial", 26, "bold"))
-    y_offset = -110  # start below the title
-    for i, (name, s) in enumerate(leaderboard, start=1):
-        leaderboard_turtle.goto(0, y_offset)
-        leaderboard_turtle.write(f"{i}. {name} - {s}", align="center", font=("Arial", 20, "normal"))
-        y_offset -= 30
     wn.update()
 
 def game_over():
@@ -135,17 +167,27 @@ def game_over():
     timer_running = False
     player_turtle.hideturtle()
     counter.clear()
-    counter.goto(0, 0)
+    counter.goto(0, wn.window_height() // 2 - 150)  # Higher position
     counter.write("Time's Up! Game Over.", align="center", font=("Arial", 30, "bold"))
-    # Update and show leaderboard
-    leaderboard = update_leaderboard()
-    display_leaderboard(leaderboard)
+    wn.update()
+
+    leader_names = get_names(LEADERBOARD_FILE)
+    leader_scores = get_scores(LEADERBOARD_FILE)
+
+    qualifies = False
+    if len(leader_scores) < 5 or score >= min(leader_scores):
+        qualifies = True
+
+    if qualifies:
+        leader_names, leader_scores = update_leaderboard(LEADERBOARD_FILE, leader_names, leader_scores, player_name, score)
+
+    draw_leaderboard(qualifies, leader_names, leader_scores, leaderboard_turtle, player_name, score)
     wn.update()
 
 def countdown():
     global timer, timer_up, timer_running
     if not timer_running:
-        return  # stop countdown if game is over
+        return
     counter.clear()
     if timer <= 0:
         timer_up = True
@@ -171,13 +213,13 @@ def respawn_turtle():
 def on_turtle_click(x, y):
     global score, timer, timer_running, timer_up
     if timer_running and not timer_up:
-        player_turtle.hideturtle()  # vanish immediately on click
+        player_turtle.hideturtle()
         score += 1
         update_score()
-        timer = initial_timer  # reset timer on click
+        timer = initial_timer
         counter.clear()
         counter.write(f"Timer: {timer:.1f} s", font=font_setup)
-        wn.ontimer(respawn_turtle, 300)  # wait 300ms before respawn
+        wn.ontimer(respawn_turtle, 300)
         wn.update()
 
 def start_game():
