@@ -147,7 +147,7 @@ leaderboard_turtle.hideturtle()
 leaderboard_turtle.penup()
 leaderboard_turtle.goto(0, 0)
 
-LEADERBOARD_FILE = "leaderboard.txt"
+LEADERBOARD_FILE = "1.2.2/leaderboard.txt"
 
 def update_score():
     score_turtle.clear()
