@@ -2,4 +2,3 @@
 - Dino Game
 - Geometry Dash
 - Some kind of shooter
-- Steal a brainrot
