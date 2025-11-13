@@ -246,6 +246,6 @@ class MazeGenerator:
         self.screen.mainloop()
 
 if __name__ == "__main__":
-    maze = MazeGenerator(rows=15, cols=20, cell_size=25, wall_color="blue", path_color="white", delay=0,
+    maze = MazeGenerator(rows=20, cols=20, cell_size=25, wall_color="blue", path_color="white", delay=0,
                          start_color="green", end_color="red", debug_path_color="yellow", extra_branches=40)
     maze.generate()
